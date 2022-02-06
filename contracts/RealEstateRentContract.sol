@@ -1,19 +1,25 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity >=0.8.0 <0.9.0;
+
+import "./User.sol";
+import "./RealEstate.sol";
 
 contract RealEstateRentContract {
     enum Status {
         DEPLOY_DEPOSIT,
-        DEFAULT,
+        RENT_PAYED,
+        RENT_NOT_PAYED_FOR_30_DAYS,
+        RENT_NOT_PAYED_AND_NO_DEPOSIT,
         CHANGE_TRIGGERED,
-        MUTUAL_AGREEMENT_DESTRUCTION_SIGN,
-        CAN_BE_DESTROYED
+        CAN_BE_CONTINUED,
+        CAN_BE_DESTROYED,
+        MUTUAL_AGREEMENT_DESTRUCTION_SIGNATURE ??
     }
 
     struct ContractData {
-        Owner owner;
-        Tenant tenant;
+        User owner;
+        User tenant;
         uint rentInGWei;
         RealEstate realEstateAddress;
         uint contractEndDateUnixTimestamp;
@@ -23,19 +29,20 @@ contract RealEstateRentContract {
     struct Payment {
         uint price;
         uint paymentUnixTimestamp;
+        // add date
     }
 
     ContractData contractData;
     ContractData futureContractData;
 
-    Payment[] paymentHistory;
+    Payment[] private paymentHistory;
 
-    mapping(uint => string) dateToREInteriorImagesLink
+    mapping(uint => string) private dateToREInteriorImagesLink;
 
-    Status contractStatus;
+    Status private contractStatus;
 
-    bool ownerSign;
-    bool tenantSign;
+    bool private ownerSign;
+    bool private tenantSign;
 
     constructor(
         address _owner,
@@ -47,17 +54,34 @@ contract RealEstateRentContract {
         
     }
 
-    modifier owner{}
-    modifier tenant{}
+    modifier onlyOwner {
+        require(msg.sender == owner.getEthPaymentAddress());
+        _;
+    }
+    modifier onlyTenant {
+        require(msg.sender == tenant.getEthPaymentAddress());
+        _;
+    }
 
-    modifier ownerSign {}
-    modifier tenantSign {}
+    modifier ownerOrTenant {
+        require(msg.sender == owner.getEthPaymentAddress() || msg.sender == tenant.getEthPaymentAddress());
+        _;
+    }
+
+    modifier ownerSign {
+        require(ownerSign == true);
+        _;
+    }
+    modifier tenantSign {
+        require(tenantSign == true);
+        _;
+    }
 
     modifier nextMonthOrOwnerAgreement {}
     modifier notPayedLastMonth {}
 
-    owner
-    function makeChange() {}
+    onlyOwner
+    function proposeChange() {}
 
     ownerSign, tenantSign
     function applyChange() {}
@@ -65,108 +89,23 @@ contract RealEstateRentContract {
     tenant, nextMonthOrOwnerAgreement
     function payRent() payable {}
 
+    onlyTenant, specificState
+    function deployDeposit() {}
+
     ownerSign, tenantSign
     function destroyContractByMutualAgreement() {} // AndLockTheDoor
 
-    owner, notPayedLastMoth
-    function destroyContractBecauseTenantDontPays() {} // AndLockTheDoor
+    onlyOwner, notPayedLastMonth
+    function destroyContractBecauseTenantDidntPay() {} // AndLockTheDoor
 
-    owner, notPayedLastMonthOrMutualAgreement
+    onlyOwner, notPayedLastMonthOrMutualAgreement
     function takeDeposit() {}
 
     tenant, ownerSign
     function returnDeposit() {}
 
-    owner, tenant
+    ownerOrTenant
     function uploadREInteriorImagesLink() {}
-}
-
-
-contract RealEstateSellingContract {
-    enum Status {
-        DEPLOY_DEPOSIT,
-        DEFAULT,
-        CHANGE_TRIGGERED,
-        MUTUAL_AGREEMENT_DESTRUCTION_SIGN,
-        CAN_BE_DESTROYED
-    }
-
-    struct ContractData {
-        address owner;
-        address tenant;
-        uint rentInGWei;
-        string realEstateNotarialnoId;
-        uint contractEndDateUnixTimestamp;
-        uint depositInGwei;
-    }
-
-    struct Payment {
-        uint price;
-        uint paymentUnixTimestamp;
-    }
-
-    ContractData contractData;
-    ContractData futureContractData;
-
-    Payment[] paymentHistory;
-
-    mapping(uint => string) dateToREInteriorImagesLink
-
-    Status contractStatus;
-
-    bool ownerSign;
-    bool tenantSign;
-
-    constructor(
-        address _owner,
-        address _tenant,
-        uint _rentInGwei,
-        string _realEstateNotarialnoId,
-        uint _contractEndDateUnixTimestamp
-    ) {
-        
-    }
-
-    modifier owner{}
-    modifier tenant{}
-
-    modifier ownerSign {}
-    modifier tenantSign {}
-
-    modifier nextMonthOrOwnerAgreement {}
-    modifier notPayedLastMonth {}
-
-    owner
-    function makeChange() {}
-
-    ownerSign, tenantSign
-    function applyChange() {}
-
-    tenant, nextMonthOrOwnerAgreement
-    function payRent() payable {}
-
-    ownerSign, tenantSign
-    function destroyContractByMutualAgreement() {} // AndLockTheDoor
-
-    owner, notPayedLastMoth
-    function destroyContractBecauseTenantDontPays() {} // AndLockTheDoor
-
-    owner, notPayedLastMonthOrMutualAgreement
-    function takeDeposit() {}
-
-    tenant, ownerSign
-    function returnDeposit() {}
-
-    owner, tenant
-    function uploadREInteriorImagesLink() {}
-
-    tenant
-    function rateRealEstate() {}
-    tenant
-    function rateOwner() {}
-
-    owner
-    function rateTenant() {}
 }
 
 contract ContractFactory {

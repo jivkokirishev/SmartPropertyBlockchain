@@ -1,46 +1,58 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity >=0.8.0 <0.9.0;
 
 contract User {
-    address idenaAddress;
-    address ethPaymentAddress;
-}
+    address private idenaAddress;
+    address private ethPaymentAddress;
 
-contract Owner {
-    User user;
-    uint rating;
-}
+    constructor(address _idenaAddress, address _ethPaymentAddress) {
+        idenaAddress = _idenaAddress;
+        ethPaymentAddress = _ethPaymentAddress;
+    }
 
-contract Tenant {
-    User user;
-    uint rating;
+    function getIdenaAddress() public view returns(address) {
+        return idenaAddress;
+    }
+
+    function setEthPaymentAddress(address _ethPaymentAddress) public {
+        ethPaymentAddress = _ethPaymentAddress;
+    }
+
+    function getEthPaymentAddress() public view returns(address) {
+        return ethPaymentAddress;
+    }
+
+    // destructor
 }
 
 contract UserFactory {
-    Owner[] owners;
-    Tenant[] tenants;
+    User[] owners;
+    User[] tenants;
 
-    // or delete Owner and Tenant and use only User like this
-    mapping(User => uint) ownerRating;
-    mapping(User => uint) tenantRating;
+    // For now we won't implement user rating
+    // mapping(address => uint) ownerRating;
+    // mapping(address => uint) tenantRating;
 
-    function createUser() {
-        new User();
+
+    function createOwner(address _idenaAddress, address _ethPaymentAddress) public returns(User) {
+        User owner = new User(_idenaAddress, _ethPaymentAddress);
+        owners.push(owner);
+
+        return owner;
     }
 
-    function createOwner(User user) {
-        new Owner();
-    }
+    function createTenant(address _idenaAddress, address _ethPaymentAddress) public returns(User) {
+        User tenant = new User(_idenaAddress, _ethPaymentAddress);
+        tenants.push(tenant);
 
-    function createTenant(User user) {
-        new Tenant();
+        return tenant;
     }
     
-    function getOwnerByIdenaAddress() {}
-    function getAllOwners() {}
+    function getOwnerByIdenaAddress() public {}
+    function getAllOwners() public {}
 
-    function getTenantByIdenaAddress() {}
-    function getAllTenants() {}
+    function getTenantByIdenaAddress() public {}
+    function getAllTenants() public {}
 
 }
