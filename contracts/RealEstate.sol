@@ -46,12 +46,19 @@ contract RealEstate {
 contract RealEstateFactory {
     RealEstate[] private properties;
 
-    function createRealEstateRecord(User _owner, string memory _realEstateNotarialnoId) public returns(RealEstate) {
-        RealEstate realEstate = new RealEstate(_owner, _realEstateNotarialnoId);
+    modifier onlyPlatform {
+        // Not implemented yet
+        //  address(0) should be the eth address of the SmartProperty platform
+        require(msg.sender == address(0));
+        _;
+    }
+
+    function createRealEstateRecord(User _owner, string memory _realEstateCadastreId) public returns(RealEstate) {
+        RealEstate realEstate = new RealEstate(_owner, _realEstateCadastreId);
         properties.push(realEstate);
 
         return realEstate;
     }
 
-    function getRealEstateByNotarialnoId(string memory _realEstateNotarialnoId) public {}
+    function getRealEstateByCadastreId(string memory _realEstateCadastreId) public onlyPlatform {}
 }

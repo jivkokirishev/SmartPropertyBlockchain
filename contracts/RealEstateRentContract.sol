@@ -112,8 +112,7 @@ contract ContractFactory {
 
     modifier onlyPlatform {} ??
 
-    onlyPlatform ??
-    function createRentalContract() {
+    function createRentalContract() onlyPlatform {
         new RealEstateRentContract();
     }
 }
