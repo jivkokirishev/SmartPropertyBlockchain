@@ -14,7 +14,7 @@ contract RealEstateRentContract {
         CHANGE_TRIGGERED,
         CAN_BE_CONTINUED,
         CAN_BE_DESTROYED,
-        MUTUAL_AGREEMENT_DESTRUCTION_SIGNATURE ??
+        MUTUAL_AGREEMENT_DESTRUCTION_SIGNATURE
     }
 
     struct ContractData {
@@ -29,7 +29,7 @@ contract RealEstateRentContract {
     struct Payment {
         uint price;
         uint paymentUnixTimestamp;
-        // add date
+        uint rentMonth;
     }
 
     ContractData contractData;
@@ -51,20 +51,21 @@ contract RealEstateRentContract {
         RealEstate _realEstateAddress,
         uint _contractEndDateUnixTimestamp
     ) {
-        
+        contractData = ContractData(_owner, _tenant, _rentInGwei, _realEstateAddress, _contractEndDateUnixTimestamp, 0);
+        contractStatus = Status.DEPLOY_DEPOSIT;
     }
 
     modifier onlyOwner {
-        require(msg.sender == owner.getEthPaymentAddress());
+        require(msg.sender == contractData.owner.getEthPaymentAddress());
         _;
     }
     modifier onlyTenant {
-        require(msg.sender == tenant.getEthPaymentAddress());
+        require(msg.sender == contractData.tenant.getEthPaymentAddress());
         _;
     }
 
     modifier ownerOrTenant {
-        require(msg.sender == owner.getEthPaymentAddress() || msg.sender == tenant.getEthPaymentAddress());
+        require(msg.sender == contractData.owner.getEthPaymentAddress() || msg.sender == contractData.tenant.getEthPaymentAddress());
         _;
     }
 
@@ -72,47 +73,64 @@ contract RealEstateRentContract {
         require(ownerSign == true);
         _;
     }
+
     modifier tenantSign {
         require(tenantSign == true);
         _;
     }
 
-    modifier nextMonthOrOwnerAgreement {}
-    modifier notPayedLastMonth {}
+    modifier nextMonthOrOwnerAgreement {
+        // Not implemented yet
+        _;
+    }
+    modifier notPayedLastMonth {
+        // Not implemented yet
+        _;
+    }
 
-    onlyOwner
-    function proposeChange() {}
+    modifier specificStatus(Status _status) {
+        require(contractStatus == _status);
+        _;
+    }
 
-    ownerSign, tenantSign
-    function applyChange() {}
+    function proposeChange() public onlyOwner {}
 
-    tenant, nextMonthOrOwnerAgreement
-    function payRent() payable {}
+    function applyChange() public ownerSign tenantSign {}
 
-    onlyTenant, specificState
-    function deployDeposit() {}
+    function payRent() payable public onlyTenant nextMonthOrOwnerAgreement {}
 
-    ownerSign, tenantSign
-    function destroyContractByMutualAgreement() {} // AndLockTheDoor
+    function deployDeposit() public onlyTenant specificStatus(Status.DEPLOY_DEPOSIT) {}
 
-    onlyOwner, notPayedLastMonth
-    function destroyContractBecauseTenantDidntPay() {} // AndLockTheDoor
+    function destroyContractByMutualAgreement() public ownerSign tenantSign {}
 
-    onlyOwner, notPayedLastMonthOrMutualAgreement
-    function takeDeposit() {}
+    function destroyContractBecauseTenantDidntPay() public onlyOwner notPayedLastMonth {}
 
-    tenant, ownerSign
-    function returnDeposit() {}
+    function takeDeposit() public onlyOwner specificStatus(Status.RENT_NOT_PAYED_FOR_30_DAYS) {}
 
-    ownerOrTenant
-    function uploadREInteriorImagesLink() {}
+    function returnDeposit() public onlyTenant ownerSign {}
+
+    function uploadREInteriorImagesLink() public ownerOrTenant {}
 }
 
 contract ContractFactory {
 
-    modifier onlyPlatform {} ??
+    RealEstateRentContract[] private rentContracts;
 
-    function createRentalContract() onlyPlatform {
-        new RealEstateRentContract();
+    modifier onlyPlatform {
+        // Not implemented yet
+        //  address(0) should be the eth address of the SmartProperty platform
+        require(msg.sender == address(0));
+        _;
+    }
+
+    function createRentalContract(
+        address _owner,
+        address _tenant,
+        uint _rentInGwei,
+        RealEstate _realEstateAddress,
+        uint _contractEndDateUnixTimestamp
+    ) public onlyPlatform {
+        rentContract = new RealEstateRentContract(_owner, _tenant, _rentInGwei, _realEstateAddress, _contractEndDateUnixTimestamp);
+        rentContracts.add(rentContract);
     }
 }
